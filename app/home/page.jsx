@@ -42,10 +42,8 @@ const Home = () => {
     model: false,
   });
   const [userId, setUserId] = useState("");
-  // console.log(userId);
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("loggedIn"));
-    console.log(user);
     if (user) {
       setUserId(user.uid);
       updateInventory(user.uid);

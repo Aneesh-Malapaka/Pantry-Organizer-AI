@@ -36,7 +36,6 @@ const recipeGemini = () => {
       history: [],
     });
     const result = await chatSession.sendMessage(ingredientsArray);
-    // console.log(result.response);
     return result.response.text();
   }
 

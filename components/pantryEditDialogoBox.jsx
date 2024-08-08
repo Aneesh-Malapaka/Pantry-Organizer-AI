@@ -13,7 +13,6 @@ export default function FormDialog({ state, handleClose, userId, item, data }) {
   const [open, setOpen] = useState(false);
   const [unit, setUnit] = useState("");
   const {editInventory} = pantryOperations(data)
-  // console.log(item)
   useEffect(() => {
     setOpen(state);
   }, [state]);
@@ -38,10 +37,8 @@ export default function FormDialog({ state, handleClose, userId, item, data }) {
             event.preventDefault();
             const formData = new FormData(event.currentTarget);
             const formJson = Object.fromEntries(formData.entries());
-            console.log(formJson)
+         
             // const email = formJson.email;
-            // console.log(email);
-            console.log(userId)
             editInventory(userId, formJson, item.id)
             handleClose();
           },
