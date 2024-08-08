@@ -26,7 +26,6 @@ const useAuth = () => {
         await setDoc(userPantryDocRef, {});
       }
 
-      console.log("User info:", user);
       localStorage.setItem("loggedIn", JSON.stringify(user));
       router.push("/home");
     } catch (error) {
