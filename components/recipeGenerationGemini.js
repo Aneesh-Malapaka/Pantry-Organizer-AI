@@ -6,7 +6,7 @@ import {
 } from "@google/generative-ai";
 
 const recipeGemini = () => {
-  const apiKey = process.env.NEXT_PUBLIC_API_KEY_GEMINI;
+  const apiKey = process.env.NEXT_PUBLIC_API_GEMINI;
   const genAI = new GoogleGenerativeAI(apiKey);
 
   const model = genAI.getGenerativeModel({
