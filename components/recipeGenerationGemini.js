@@ -35,8 +35,10 @@ const recipeGemini = () => {
       safetySettings,
       history: [],
     });
+    console.log(ingredientsArray);
     const result = await chatSession.sendMessage(ingredientsArray);
-    return result.response.text();
+    console.log(result)
+    return result.response;
   }
 
   return run;

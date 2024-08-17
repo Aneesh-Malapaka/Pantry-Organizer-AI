@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { styled } from "@mui/material/styles";
+import PropTypes from "prop-types";
 import {
   Typography,
   Box,
@@ -14,6 +15,11 @@ import {
   Divider,
   FormHelperText,
   CircularProgress,
+  Tabs,
+  Tab,
+  Accordion,
+  AccordionDetails,
+  AccordionSummary
 } from "@mui/material";
 import PrimarySearchAppBar from "@/components/searchBar";
 import { Delete, Edit } from "@mui/icons-material";
@@ -22,10 +28,38 @@ import pantryOperations from "../../pantryCRUD";
 import recipeGemini from "../../components/recipeGenerationGemini";
 import ReactMarkdown from "react-markdown";
 
+function CustomTabPanel(props) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+    </div>
+  );
+}
+
+CustomTabPanel.propTypes = {
+  children: PropTypes.node,
+  index: PropTypes.number.isRequired,
+  value: PropTypes.number.isRequired,
+};
+
+function a11yProps(index) {
+  return {
+    id: `simple-tab-${index}`,
+    "aria-controls": `simple-tabpanel-${index}`,
+  };
+}
 const Home = () => {
   const [data, setData] = useState([]);
-  const [ingredients, setIngredients] = useState([])
-  const [recipe, setRecipe] = useState("")
+  const [recipe, setRecipe] = useState("");
+  const [ingredients, setIngredients] = useState([]);
   const [itemName, setItemName] = useState("");
   const [quantity, setQuantity] = useState("");
   const [editingItem, setEditingItem] = useState(null);
@@ -34,6 +68,7 @@ const Home = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [filteredPantry, setFilteredPantry] = useState([]);
+  const [value, setValue] = useState(0);
 
   const [errors, setErrors] = useState({
     itemName: false,
@@ -83,7 +118,7 @@ const Home = () => {
   const { addToInventory, removeItem, updateInventory } =
     pantryOperations(setData);
 
-  const run = recipeGemini()
+  const run = recipeGemini();
   const handleAddItem = () => {
     let validationErrors = {};
     if (!itemName) validationErrors.itemName = true;
@@ -109,27 +144,43 @@ const Home = () => {
   };
 
   const handleRecipeGeneration = async (data) => {
-    data.map(item=>{
-      setIngredients(ingredients=> [...ingredients, item.name])
-    })
-    try {
-      const recipeGenerated = await run(ingredients);
-      setRecipe(recipeGenerated);
-      // setIngredients([])
-    } catch (error) {
-      console.error('Error generating recipe:', error);
-    } finally {
-      setLoading(false);
-    }
+    console.log(data);
+    data.map((item) => {
+      setIngredients((prev) => [...prev, item.name]);
+    });
   };
-  
+
   const handleSearchResults = (results) => {
     setFilteredPantry(results);
   };
 
-  useEffect(()=>{
-    setFilteredPantry(data)
-  },[data])
+  useEffect(() => {
+    setFilteredPantry(data);
+  }, [data]);
+
+  const handleChange = (event, newValue) => {
+    setValue(newValue);
+  };
+
+  useEffect(() => {
+    if (ingredients.length) {
+      const generateRecipe = async () => {
+        try {
+          console.log(ingredients);
+          setLoading(true);
+          const recipeGenerated = await run(ingredients);
+          if(recipeGenerated.text()){
+            setRecipe(recipeGenerated.text());
+            setLoading(false);
+          }
+        } catch (error) {
+          console.error("Error generating recipe:", error);
+        }
+      };
+      generateRecipe();
+    }
+  }, [ingredients]);
+
   return (
     <Box
       sx={{
@@ -138,14 +189,21 @@ const Home = () => {
         alignItems: "start",
         justifyContent: "space-around",
         flexDirection: { xs: "column", md: "row" },
-        alignItems:{sm:"center", md:"start"},
+        alignItems: { sm: "center", md: "start" },
         gap: 5,
         width: "100%",
         height: "100%",
       }}
     >
-      <Paper className="pantry" elevation={3} sx={{ p: 2, width:{sm:"75vw", md:"50vw"} }}>
-        <PrimarySearchAppBar data={data} handleSearchResults={handleSearchResults} />
+      <Paper
+        className="pantry"
+        elevation={3}
+        sx={{ p: 2, width: { sm: "75vw", md: "50vw" } }}
+      >
+        <PrimarySearchAppBar
+          data={data}
+          handleSearchResults={handleSearchResults}
+        />
         <Box
           sx={{
             m: 1,
@@ -157,7 +215,7 @@ const Home = () => {
             handleClose={() => setDialogOpen(false)}
             userId={userId}
             item={editingItem}
-            data = {setData}
+            data={setData}
           />
           <Typography variant="h4" sx={{ ...styleFont }}>
             Add New Item To Pantry
@@ -245,38 +303,41 @@ const Home = () => {
           <Typography variant="h5" sx={{ ...styleFont }}>
             Current Pantry
           </Typography>
-          <Box sx={{
-            overflowY: "auto",
-            height: "50vh",
+          <Box
+            sx={{
+              overflowY: "auto",
+              height: "50vh",
+            }}
+          >
+            {filteredPantry.length || data.length ? (
+              filteredPantry.map((item) => (
+                <Paper
+                  square={false}
+                  key={item.name}
+                  sx={{
+                    mx: 1,
+                    my: 3,
+                    p: 1,
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Box>
+                    <Typography variant="h6" sx={{ ...styleFont }}>
+                      {item.name}
+                    </Typography>
+                    <Typography variant="body1" sx={{ ...styleFont }}>
+                      Quantity: {item.unit_value} {item.unit}
+                    </Typography>
+                  </Box>
 
-          }}>
-            {(filteredPantry.length || data.length) ? filteredPantry.map((item) => (
-              <Paper
-                square={false}
-                key={item.name}
-                sx={{
-                  mx: 1,
-                  my: 3,
-                  p: 1,
-                  display: "flex",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Box>
-                  <Typography variant="h6" sx={{ ...styleFont }}>
-                    {item.name}
-                  </Typography>
-                  <Typography variant="body1" sx={{ ...styleFont }}>
-                    Quantity: {item.unit_value} {item.unit}
-                  </Typography>
-                </Box>
-
-                <IconWrapper>
-                  <Edit onClick={() => handleEdit(item)} />
-                  <Delete onClick={() => removeItem(userId, item.id)} />
-                </IconWrapper>
-              </Paper>
-            )): (
+                  <IconWrapper>
+                    <Edit onClick={() => handleEdit(item)} />
+                    <Delete onClick={() => removeItem(userId, item.id)} />
+                  </IconWrapper>
+                </Paper>
+              ))
+            ) : (
               <Typography variant="h6" sx={{ ...styleFont }}>
                 No Items in Pantry
               </Typography>
@@ -284,7 +345,7 @@ const Home = () => {
           </Box>
         </Box>
       </Paper>
-      <Paper elevation={3} sx={{ p: 2, width:{sm:"75vw", md:"50vw"} }}>
+      <Paper elevation={3} sx={{ p: 2, width: { sm: "75vw", md: "50vw" }, height: "100%", overflowY: "auto" }}>
         <Typography variant="h4">Recipe Generation</Typography>
         <Typography variant="subtitle1">
           With the items in your pantry, you can generate a recipe.😋
@@ -292,7 +353,7 @@ const Home = () => {
         <Box>
           <FormControl
             variant="outlined"
-            sx={{ flex: 1, my: 3, width:"100%" }}
+            sx={{ flex: 1, my: 3, width: "100%" }}
             error={errors.model}
           >
             <InputLabel id="model-label">Select Model</InputLabel>
@@ -311,23 +372,51 @@ const Home = () => {
               </FormHelperText>
             )}
           </FormControl>
-          <Button variant="contained" onClick={()=> handleRecipeGeneration(data)}>
-            Find a Recipe
-          </Button>
-          {loading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
+          <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+            <Tabs
+              value={value}
+              onChange={handleChange}
+              aria-label="basic tabs example"
+            >
+              <Tab label="Recipe Generation" {...a11yProps(0)} />
+              <Tab label="Your Recipes" {...a11yProps(1)} />
+            </Tabs>
+          </Box>
+          <CustomTabPanel value={value} index={0}>
+            <Button
+              variant="contained"
+              onClick={() => handleRecipeGeneration(filteredPantry)}
+            >
+              Find a Recipe
+            </Button>
+            {loading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <Paper elevation={1} sx={{ p: 1, my: 2 }}>
+                <Typography variant="h5" sx={{ my: 1 }}>
+                  Generated Recipe:
+                </Typography>
+                <Box variant="body1" sx={{ p: 2, my: 2 }}>
+                  {console.log(recipe)}
+                  {recipe ? (
+                    <ReactMarkdown>{recipe}</ReactMarkdown>
+                  ) : (
+                    <Typography variant="body1" sx={{ ...styleFont }}>
+                      No Recipe Generated Yet
+                    </Typography>
+                  )}
+                  {/* <ReactMarkdown>{recipe}</ReactMarkdown> */}
+                </Box>
+              </Paper>
+            )}
+          </CustomTabPanel>
+          <CustomTabPanel value={value} index={1}>
             <Paper elevation={1} sx={{ p: 1, my: 2 }}>
-              <Typography variant="h5" sx={{ my: 1 }}>
-                Generated Recipe:
-              </Typography>
-              <Typography variant="body1" sx={{ p: 2, my: 2 }}>
-                <ReactMarkdown>{recipe}</ReactMarkdown>
-              </Typography>
+                Coming Soon...
             </Paper>
-          )}
+          </CustomTabPanel>
         </Box>
       </Paper>
     </Box>

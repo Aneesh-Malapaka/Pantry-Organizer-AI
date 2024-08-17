@@ -14,7 +14,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={inter.className} style={{ height: "100vh" }}>
         <Header />
-        <main>{children}</main>
+        <main style={{height:"100%"}}>{children}</main>
         <Footer />
       </body>
     </html>
